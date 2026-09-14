@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Weekly Standup Log</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #10141b;
+    min-height: 100vh;
+  }
+  #standup-root {
+    --bg: #10141b;
+    --surface: #1a2029;
+    --surface-raised: #212936;
+    --border: #2c3444;
+    --text: #e7eaf0;
+    --text-muted: #8992a3;
+    --accent: #d98e3a;
+    --accent-soft: #d98e3a22;
+    --ok: #5fae7f;
+    --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-ui);
+    padding: 28px 16px 40px;
+    max-width: 480px;
+    margin: 0 auto;
+    box-sizing: border-box;
+    min-height: 100vh;
+  }
+  #standup-root * { box-sizing: border-box; }
+
+  .su-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 4px;
+  }
+  .su-title {
+    font-size: 17px;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+  }
+  .su-week {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    color: var(--text-muted);
+  }
+  .su-sub {
+    font-size: 12.5px;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+  }
+
+  .su-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+  .su-tab {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    border-radius: 9px;
+    padding: 8px 0;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+  }
+  .su-tab.active {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .su-user-toggle {
+    display: flex;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 3px;
+    margin-bottom: 14px;
+  }
+  .su-user-btn {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    padding: 7px 0;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .su-user-btn.active {
+    background: var(--surface-raised);
+    color: var(--text);
+  }
+
+  .su-day-strip {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 12px;
+    overflow-x: auto;
+  }
+  .su-day-pill {
+    flex: 1;
+    min-width: 44px;
+    text-align: center;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 7px 0 6px;
+    cursor: pointer;
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+  .su-day-pill .d { font-size: 13px; font-weight: 700; color: var(--text); display: block; }
+  .su-day-pill.active {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+  .su-day-pill.has-entries::after {
+    content: "";
+    display: block;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--ok);
+    margin: 4px auto 0;
+  }
+
+  .su-form {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 11px;
+    padding: 12px;
+    margin-bottom: 14px;
+  }
+  .su-select, .su-textarea {
+    width: 100%;
+    background: var(--surface-raised);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 9px 10px;
+    font-size: 13.5px;
+    font-family: var(--font-ui);
+    margin-bottom: 8px;
+  }
+  .su-textarea { min-height: 60px; resize: vertical; }
+  .su-add-btn {
+    width: 100%;
+    background: var(--accent);
+    color: #1a1206;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 0;
+    font-size: 13.5px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .su-add-btn:disabled { opacity: 0.4; cursor: default; }
+
+  .su-entry-list { margin-bottom: 18px; }
+  .su-entry {
+    display: flex;
+    gap: 10px;
+    padding: 10px 2px;
+    border-bottom: 1px solid var(--border);
+  }
+  .su-entry:last-child { border-bottom: none; }
+  .su-entry-cat {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--accent);
+    font-weight: 700;
+    white-space: nowrap;
+    padding-top: 1px;
+  }
+  .su-entry-text { font-size: 13px; line-height: 1.4; flex: 1; }
+  .su-entry-del {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 0 2px;
+  }
+  .su-empty {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 12.5px;
+    padding: 22px 10px;
+  }
+
+  .su-report-toggle {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+  .su-report-toggle button {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    border-radius: 8px;
+    padding: 7px 0;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .su-report-toggle button.active {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .su-report-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 11px;
+    padding: 14px;
+    font-size: 13px;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    font-family: var(--font-mono);
+    max-height: 360px;
+    overflow-y: auto;
+    margin-bottom: 10px;
+  }
+  .su-report-block .cat-head {
+    color: var(--accent);
+    font-weight: 700;
+    font-family: var(--font-ui);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin: 12px 0 4px;
+  }
+  .su-report-block .cat-head:first-child { margin-top: 0; }
+  .su-copy-btn {
+    width: 100%;
+    background: var(--surface-raised);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 9px 0;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .su-copy-btn.copied { border-color: var(--ok); color: var(--ok); }
+  .su-status { font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 8px; min-height: 14px; }
+</style>
+</head>
+<body>
+<div id="standup-root"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+
+<script type="text/babel">
+const { useState, useEffect, useCallback, useMemo } = React;
+
+// --- Supabase connection ---
+const SUPABASE_URL = "https://hoganlmkmtuipzuzczfg.supabase.co";
+const SUPABASE_KEY = "sb_publishable_lOqUzzO7wGdBSJjZkhQ52A_44dMjhHD";
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const TABLE = "standup_entries";
+
+const USERS = ["Williams", "Tobe"];
+const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri"];
+const CATEGORIES = [
+  "User & Access Support",
+  "Procurement",
+  "Printers & Hardware",
+  "Network",
+  "Compliance",
+  "Other",
+];
+
+function getMonday(d) {
+  const date = new Date(d);
+  const day = date.getDay();
+  const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+  date.setDate(diff);
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
+function weekKeyFor(d) {
+  const mon = getMonday(d);
+  return mon.toISOString().slice(0, 10);
+}
+
+function fmtWeekLabel(weekKey) {
+  const mon = new Date(weekKey + "T00:00:00");
+  const fri = new Date(mon);
+  fri.setDate(mon.getDate() + 4);
+  const opts = { month: "short", day: "numeric" };
+  return `${mon.toLocaleDateString(undefined, opts)} – ${fri.toLocaleDateString(undefined, opts)}`;
+}
+
+function todayDayIndex() {
+  const d = new Date().getDay();
+  return d >= 1 && d <= 5 ? d - 1 : 0;
+}
+
+function App() {
+  const weekKey = useMemo(() => weekKeyFor(new Date()), []);
+  const [user, setUser] = useState(USERS[0]);
+  const [day, setDay] = useState(todayDayIndex());
+  const [allEntries, setAllEntries] = useState([]); // flat list from supabase, this week only
+  const [loading, setLoading] = useState(true);
+  const [category, setCategory] = useState(CATEGORIES[0]);
+  const [text, setText] = useState("");
+  const [view, setView] = useState("log");
+  const [reportWho, setReportWho] = useState("both");
+  const [copied, setCopied] = useState(false);
+  const [status, setStatus] = useState("");
+
+  const loadAll = useCallback(async () => {
+    setLoading(true);
+    const { data, error } = await sb
+      .from(TABLE)
+      .select("*")
+      .eq("week_key", weekKey)
+      .order("created_at", { ascending: true });
+    if (error) {
+      setStatus("Couldn't load entries");
+    } else {
+      setAllEntries(data || []);
+    }
+    setLoading(false);
+  }, [weekKey]);
+
+  useEffect(() => { loadAll(); }, [loadAll]);
+
+  const addEntry = async () => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    const row = {
+      week_key: weekKey,
+      owner: user,
+      day,
+      category,
+      entry_text: trimmed,
+    };
+    const { data, error } = await sb.from(TABLE).insert(row).select();
+    if (error) {
+      setStatus("Couldn't save, try again");
+      setTimeout(() => setStatus(""), 2000);
+      return;
+    }
+    setAllEntries((prev) => [...prev, ...(data || [])]);
+    setText("");
+    setStatus("Saved");
+    setTimeout(() => setStatus(""), 1200);
+  };
+
+  const deleteEntry = async (id) => {
+    const prev = allEntries;
+    setAllEntries((cur) => cur.filter((e) => e.id !== id));
+    const { error } = await sb.from(TABLE).delete().eq("id", id);
+    if (error) {
+      setAllEntries(prev);
+      setStatus("Couldn't delete, try again");
+      setTimeout(() => setStatus(""), 2000);
+    }
+  };
+
+  const userEntries = allEntries.filter((e) => e.owner === user);
+  const dayEntries = userEntries.filter((e) => e.day === day);
+
+  const daysWithEntries = useMemo(() => {
+    return new Set(userEntries.map((e) => e.day));
+  }, [userEntries]);
+
+  const reportText = useMemo(() => {
+    let pool = [];
+    if (reportWho === "both") {
+      pool = allEntries.map((e) => ({ ...e, owner: e.owner }));
+    } else {
+      pool = allEntries.filter((e) => e.owner === reportWho);
+    }
+    if (pool.length === 0) return "";
+
+    const byCat = {};
+    CATEGORIES.forEach((c) => (byCat[c] = []));
+    pool.forEach((e) => byCat[e.category] && byCat[e.category].push(e));
+
+    const lines = [];
+    CATEGORIES.forEach((cat) => {
+      const items = byCat[cat];
+      if (!items.length) return;
+      lines.push(`## ${cat}`);
+      items.forEach((e) => {
+        const prefix = reportWho === "both" ? `[${e.owner}] ` : "";
+        lines.push(`- ${prefix}${e.entry_text}`);
+      });
+      lines.push("");
+    });
+    return lines.join("\n").trim();
+  }, [allEntries, reportWho]);
+
+  const copyReport = () => {
+    if (!reportText) return;
+    navigator.clipboard.writeText(reportText).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  };
+
+  return (
+    <div id="standup-root">
+      <div className="su-head">
+        <div className="su-title">Weekly Standup Log</div>
+        <div className="su-week">Week of {fmtWeekLabel(weekKey)}</div>
+      </div>
+      <div className="su-sub">Shared between Williams and Tobe.</div>
+
+      <div className="su-tabs">
+        <div className={`su-tab ${view === "log" ? "active" : ""}`} onClick={() => setView("log")}>Add entries</div>
+        <div className={`su-tab ${view === "report" ? "active" : ""}`} onClick={() => setView("report")}>Standup report</div>
+      </div>
+
+      {view === "log" && (
+        <React.Fragment>
+          <div className="su-user-toggle">
+            {USERS.map((u) => (
+              <button key={u} className={`su-user-btn ${user === u ? "active" : ""}`} onClick={() => setUser(u)}>
+                {u}
+              </button>
+            ))}
+          </div>
+
+          <div className="su-day-strip">
+            {DAYS.map((d, i) => (
+              <div
+                key={d}
+                className={`su-day-pill ${day === i ? "active" : ""} ${daysWithEntries.has(i) ? "has-entries" : ""}`}
+                onClick={() => setDay(i)}
+              >
+                <span className="d">{d}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="su-form">
+            <select className="su-select" value={category} onChange={(e) => setCategory(e.target.value)}>
+              {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+            <textarea
+              className="su-textarea"
+              placeholder={`What did you get done on ${DAYS[day]}?`}
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+            />
+            <button className="su-add-btn" onClick={addEntry} disabled={!text.trim()}>
+              Add to {DAYS[day]}
+            </button>
+          </div>
+
+          <div className="su-entry-list">
+            {loading ? (
+              <div className="su-empty">Loading…</div>
+            ) : dayEntries.length === 0 ? (
+              <div className="su-empty">Nothing logged for {user} on {DAYS[day]} yet.</div>
+            ) : (
+              dayEntries.map((e) => (
+                <div className="su-entry" key={e.id}>
+                  <div className="su-entry-cat">{e.category.split(" ")[0]}</div>
+                  <div className="su-entry-text">{e.entry_text}</div>
+                  <button className="su-entry-del" onClick={() => deleteEntry(e.id)} aria-label="Delete entry">✕</button>
+                </div>
+              ))
+            )}
+          </div>
+        </React.Fragment>
+      )}
+
+      {view === "report" && (
+        <React.Fragment>
+          <div className="su-report-toggle">
+            <button className={reportWho === "both" ? "active" : ""} onClick={() => setReportWho("both")}>Both</button>
+            {USERS.map((u) => (
+              <button key={u} className={reportWho === u ? "active" : ""} onClick={() => setReportWho(u)}>{u}</button>
+            ))}
+          </div>
+          <div className="su-report-block">
+            {loading ? "Loading…" : reportText ? (
+              reportText.split("\n").map((line, i) =>
+                line.startsWith("## ") ? (
+                  <div className="cat-head" key={i}>{line.slice(3)}</div>
+                ) : (
+                  <div key={i}>{line}</div>
+                )
+              )
+            ) : (
+              "No entries logged yet this week."
+            )}
+          </div>
+          <button className={`su-copy-btn ${copied ? "copied" : ""}`} onClick={copyReport} disabled={!reportText}>
+            {copied ? "Copied" : "Copy report text"}
+          </button>
+        </React.Fragment>
+      )}
+
+      <div className="su-status">{status}</div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("standup-root")).render(<App />);
+</script>
+</body>
+</html>
